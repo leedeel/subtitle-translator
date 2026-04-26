@@ -1,4 +1,4 @@
-// File upload API routes
+// File upload API routes / 文件上传 API 路由
 
 import { Router, Request, Response } from "express";
 import multer from "multer";
@@ -18,40 +18,11 @@ const router = Router();
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     UploadFileRequest:
- *       type: object
- *       properties:
- *         fileType:
- *           type: string
- *           enum: [srt, vtt, ass, lrc]
- *           description: Optional file type override
- *     UploadFileResponse:
- *       type: object
- *       properties:
- *         success:
- *           type: boolean
- *         fileType:
- *           type: string
- *           enum: [srt, vtt, ass, lrc]
- *         contentLines:
- *           type: array
- *           items:
- *             type: string
- *         totalLines:
- *           type: integer
- *         error:
- *           type: string
- */
-
-/**
- * @swagger
- * /upload:
+ * /api/upload:
  *   post:
  *     tags: [Upload]
- *     summary: Upload subtitle file
- *     description: Upload and parse a subtitle file. Automatically detects format unless fileType is specified.
+ *     summary: 上传字幕文件
+ *     description: 上传并解析字幕文件。自动检测格式，除非指定了 fileType
  *     requestBody:
  *       required: true
  *       content:
@@ -64,20 +35,20 @@ const router = Router();
  *               file:
  *                 type: string
  *                 format: binary
- *                 description: Subtitle file (SRT, VTT, ASS, or LRC format)
+ *                 description: 字幕文件（SRT、VTT、ASS 或 LRC 格式）
  *               fileType:
  *                 type: string
  *                 enum: [srt, vtt, ass, lrc]
- *                 description: Optional file type override
+ *                 description: 可选的文件类型覆盖
  *     responses:
  *       200:
- *         description: File processed successfully
+ *         description: 文件处理成功
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/UploadFileResponse'
  *       400:
- *         description: Bad request (no file or invalid format)
+ *         description: 请求错误（无文件或格式无效）
  *         content:
  *           application/json:
  *             schema:
@@ -135,6 +106,55 @@ router.post(
     }
   })
 );
+
+/**
+ * @swagger
+ * /api/upload/bilingual:
+ *   post:
+ *     tags: [Upload]
+ *     summary: 生成双语字幕文件
+ *     description: 根据原文和译文行生成双语字幕文件
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - originalLines
+ *               - translatedLines
+ *             properties:
+ *               originalLines:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 原始字幕行
+ *               translatedLines:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 翻译后的字幕行
+ *               fileType:
+ *                 type: string
+ *                 enum: [srt, vtt, ass, lrc]
+ *                 description: 输出文件格式
+ *               bilingualSubtitle:
+ *                 type: boolean
+ *                 description: 强制双语 ASS 输出
+ *     responses:
+ *       200:
+ *         description: 双语字幕文件
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *       400:
+ *         description: 请求错误
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 
 // Generate bilingual subtitle file
 router.post(
@@ -195,55 +215,6 @@ router.post(
     res.send(output);
   })
 );
-
-/**
- * @swagger
- * /upload/bilingual:
- *   post:
- *     tags: [Upload]
- *     summary: Generate bilingual subtitle file
- *     description: Generate a bilingual subtitle file from original and translated lines
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - originalLines
- *               - translatedLines
- *             properties:
- *               originalLines:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Original subtitle lines
- *               translatedLines:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Translated subtitle lines
- *               fileType:
- *                 type: string
- *                 enum: [srt, vtt, ass, lrc]
- *                 description: Output file format
- *               bilingualSubtitle:
- *                 type: boolean
- *                 description: Force bilingual ASS output
- *     responses:
- *       200:
- *         description: Bilingual subtitle file
- *         content:
- *           text/plain:
- *             schema:
- *               type: string
- *       400:
- *         description: Bad request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);

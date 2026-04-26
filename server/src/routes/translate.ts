@@ -1,4 +1,4 @@
-// Translation API routes
+// Translation API routes / 翻译 API 路由
 
 import { Router, Request, Response } from "express";
 import { useTranslation, generateCacheSuffix, findMethodLabel, TRANSLATION_SERVICES, LLM_MODELS, getDefaultConfig } from "../lib/translation";
@@ -9,14 +9,14 @@ const router = Router();
 
 /**
  * @swagger
- * /translate/services:
+ * /api/translate/services:
  *   get:
  *     tags: [Services]
- *     summary: Get available translation services
- *     description: Returns a list of all available translation services with their labels
+ *     summary: 获取可用翻译服务
+ *     description: 返回所有可用翻译服务及其标签的列表
  *     responses:
  *       200:
- *         description: List of translation services
+ *         description: 翻译服务列表
  *         content:
  *           application/json:
  *             schema:
@@ -24,16 +24,20 @@ const router = Router();
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   description: 是否成功
  *                 services:
  *                   type: object
+ *                   description: 翻译服务
  *                   additionalProperties:
  *                     type: object
  *                     properties:
  *                       label:
  *                         type: string
+ *                         description: 服务标签
  *                       category:
  *                         type: string
  *                         enum: [machine-translation, llm, aggregator]
+ *                         description: 服务类别
  */
 
 // Get available translation services
@@ -49,21 +53,21 @@ router.get(
 
 /**
  * @swagger
- * /translate/services/{method}/config:
+ * /api/translate/services/{method}/config:
  *   get:
  *     tags: [Services]
- *     summary: Get default configuration for a translation service
- *     description: Returns the default configuration for a specific translation method
+ *     summary: 获取翻译服务默认配置
+ *     description: 返回特定翻译方法的默认配置
  *     parameters:
  *       - in: path
  *         name: method
  *         required: true
  *         schema:
  *           type: string
- *         description: Translation method name (e.g., 'deepseek', 'google', 'openai')
+ *         description: 翻译方法名称（如 'deepseek', 'google', 'openai'）
  *     responses:
  *       200:
- *         description: Service configuration
+ *         description: 服务配置
  *         content:
  *           application/json:
  *             schema:
@@ -73,14 +77,18 @@ router.get(
  *                   type: boolean
  *                 method:
  *                   type: string
+ *                   description: 翻译方法
  *                 label:
  *                   type: string
+ *                   description: 服务标签
  *                 isLLM:
  *                   type: boolean
+ *                   description: 是否为 LLM
  *                 config:
  *                   type: object
+ *                   description: 配置
  *       404:
- *         description: Unknown translation method
+ *         description: 未知的翻译方法
  *         content:
  *           application/json:
  *             schema:
@@ -114,11 +122,11 @@ router.get(
 
 /**
  * @swagger
- * /translate:
+ * /api/translate:
  *   post:
  *     tags: [Translation]
- *     summary: Translate text
- *     description: Translate a single text or multiple texts to a target language
+ *     summary: 翻译文本
+ *     description: 将单个文本或多个文本翻译为目标语言
  *     requestBody:
  *       required: true
  *       content:
@@ -127,13 +135,13 @@ router.get(
  *             $ref: '#/components/schemas/TranslateRequest'
  *     responses:
  *       200:
- *         description: Translation successful
+ *         description: 翻译成功
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/TranslateResponse'
  *       400:
- *         description: Bad request
+ *         description: 请求错误
  *         content:
  *           application/json:
  *             schema:
@@ -203,11 +211,11 @@ router.post(
 
 /**
  * @swagger
- * /translate/test:
+ * /api/translate/test:
  *   post:
  *     tags: [Translation]
- *     summary: Test translation service
- *     description: Test if a translation service is accessible and configured correctly
+ *     summary: 测试翻译服务
+ *     description: 测试翻译服务是否可访问且配置正确
  *     requestBody:
  *       required: true
  *       content:
@@ -219,19 +227,19 @@ router.post(
  *             properties:
  *               translationMethod:
  *                 type: string
- *                 description: Translation method to test
+ *                 description: 要测试的翻译方法
  *               config:
  *                 type: object
- *                 description: Configuration for the translation method
+ *                 description: 翻译方法的配置
  *               sysPrompt:
  *                 type: string
- *                 description: System prompt to test
+ *                 description: 要测试的系统提示词
  *               userPrompt:
  *                 type: string
- *                 description: User prompt to test
+ *                 description: 要测试的用户提示词
  *     responses:
  *       200:
- *         description: Test result
+ *         description: 测试结果
  *         content:
  *           application/json:
  *             schema:
@@ -239,8 +247,10 @@ router.post(
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   description: 是否成功
  *                 message:
  *                   type: string
+ *                   description: 消息
  */
 
 // Test translation

@@ -1,4 +1,4 @@
-// Batch translation API routes
+// Batch translation API routes / 批量翻译 API 路由
 
 import { Router, Request, Response } from "express";
 import { generateCacheSuffix, getDefaultConfig, LLM_MODELS } from "../lib/translation";
@@ -10,11 +10,11 @@ const router = Router();
 
 /**
  * @swagger
- * /batch-translate:
+ * /api/batch-translate:
  *   post:
  *     tags: [Batch Translation]
- *     summary: Batch translate texts
- *     description: Translate multiple texts with optional progress tracking. Set enableProgress to true for async processing.
+ *     summary: 批量翻译
+ *     description: 批量翻译多个文本，支持进度跟踪。设置 enableProgress 为 true 启用异步处理
  *     requestBody:
  *       required: true
  *       content:
@@ -23,13 +23,13 @@ const router = Router();
  *             $ref: '#/components/schemas/BatchTranslateRequest'
  *     responses:
  *       200:
- *         description: Translation completed
+ *         description: 翻译完成
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/BatchTranslateResponse'
  *       202:
- *         description: Translation started (async mode)
+ *         description: 翻译已启动（异步模式）
  *         content:
  *           application/json:
  *             schema:
@@ -40,9 +40,9 @@ const router = Router();
  *                   example: true
  *                 jobId:
  *                   type: string
- *                   description: Job ID for tracking progress
+ *                   description: 用于跟踪进度的任务 ID
  *       400:
- *         description: Bad request
+ *         description: 请求错误
  *         content:
  *           application/json:
  *             schema:
@@ -215,27 +215,27 @@ router.get(
 
 /**
  * @swagger
- * /batch-translate/jobs/{jobId}:
+ * /api/batch-translate/jobs/{jobId}:
  *   get:
  *     tags: [Batch Translation]
- *     summary: Get batch translation job status
- *     description: Check the status of an async batch translation job
+ *     summary: 获取批量翻译任务状态
+ *     description: 检查异步批量翻译任务的状态
  *     parameters:
  *       - in: path
  *         name: jobId
  *         required: true
  *         schema:
  *           type: string
- *         description: Job ID returned from batch translate request
+ *         description: 批量翻译请求返回的任务 ID
  *     responses:
  *       200:
- *         description: Job status
+ *         description: 任务状态
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/JobStatusResponse'
  *       404:
- *         description: Job not found
+ *         description: 任务未找到
  *         content:
  *           application/json:
  *             schema:

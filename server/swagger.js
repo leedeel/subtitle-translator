@@ -8,9 +8,10 @@ const options = {
     info: {
       title: 'Subtitle Translator API',
       version: '1.0.0',
-      description: 'Backend API for subtitle translation service supporting multiple translation providers and AI models.',
+      description: 'Backend API for subtitle translation service supporting multiple translation providers and AI models.\n\n字幕翻译后端 API，支持多种翻译服务和 AI 模型。',
       contact: {
         name: 'Subtitle Translator',
+        email: 'support@example.com',
       },
       license: {
         name: 'MIT',
@@ -19,33 +20,33 @@ const options = {
     servers: [
       {
         url: 'http://localhost:3001',
-        description: 'Local development server',
+        description: '本地开发服务器',
       },
       {
         url: 'https://api.example.com',
-        description: 'Production server',
+        description: '生产服务器',
       },
     ],
     tags: [
       {
         name: 'Health',
-        description: 'Health check and server information',
+        description: '健康检查和服务器信息',
       },
       {
         name: 'Translation',
-        description: 'Single text translation operations',
+        description: '单文本翻译操作',
       },
       {
         name: 'Batch Translation',
-        description: 'Batch translation with job management',
+        description: '批量翻译及任务管理',
       },
       {
         name: 'Upload',
-        description: 'Subtitle file upload and processing',
+        description: '字幕文件上传和处理',
       },
       {
         name: 'Services',
-        description: 'Translation services and configuration',
+        description: '翻译服务和配置',
       },
     ],
     components: {
@@ -56,42 +57,36 @@ const options = {
           properties: {
             text: {
               oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
-              description: 'Text or array of texts to translate',
+              description: '待翻译文本或文本数组',
             },
             targetLanguage: {
               type: 'string',
-              description: "Target language code (e.g., 'en', 'zh', 'ja')",
+              description: '目标语言代码',
             },
             sourceLanguage: {
               type: 'string',
-              description: "Source language code (default: 'auto')",
+              description: '源语言代码（默认 auto）',
             },
             translationMethod: {
               type: 'string',
-              description: 'Translation service/method to use',
-              enum: [
-                'gtxFreeAPI', 'google', 'deepl', 'azure', 'deeplx', 'qwenMt',
-                'deepseek', 'openai', 'claude', 'gemini', 'qwen', 'moonshot',
-                'zhipu', 'doubao', 'xAI', 'mistral', 'perplexity',
-                'openrouter', 'groq', 'siliconflow', 'nvidia', 'azureOpenAI', 'customLLM'
-              ],
+              description: '使用的翻译服务/方法',
             },
             useCache: {
               type: 'boolean',
-              description: 'Enable translation caching (default: true)',
+              description: '启用翻译缓存（默认 true）',
             },
             config: {
               type: 'object',
               properties: {
-                apiKey: { type: 'string', description: 'API key for service' },
-                region: { type: 'string', description: 'Region for service' },
-                url: { type: 'string', description: 'Custom endpoint URL' },
-                model: { type: 'string', description: 'LLM model name' },
-                temperature: { type: 'number', minimum: 0, maximum: 2, description: 'Temperature for LLM models' },
-                sysPrompt: { type: 'string', description: 'System prompt for LLM models' },
-                userPrompt: { type: 'string', description: 'User prompt for LLM models' },
-                useRelay: { type: 'boolean', description: 'Use relay proxy for API requests' },
-                enableThinking: { type: 'boolean', description: 'Enable thinking mode for supported models' },
+                apiKey: { type: 'string', description: '服务 API 密钥' },
+                region: { type: 'string', description: '服务区域' },
+                url: { type: 'string', description: '自定义端点 URL' },
+                model: { type: 'string', description: 'LLM 模型名称' },
+                temperature: { type: 'number', minimum: 0, maximum: 2, description: 'LLM 模型的温度参数' },
+                sysPrompt: { type: 'string', description: 'LLM 模型的系统提示词' },
+                userPrompt: { type: 'string', description: 'LLM 模型的用户提示词' },
+                useRelay: { type: 'boolean', description: '使用中继代理进行 API 请求' },
+                enableThinking: { type: 'boolean', description: '启用支持模型的思考模式' },
               },
             },
           },
@@ -99,12 +94,12 @@ const options = {
         TranslateResponse: {
           type: 'object',
           properties: {
-            success: { type: 'boolean', description: 'Whether the request was successful' },
+            success: { type: 'boolean', description: '请求是否成功' },
             result: {
               oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
-              description: 'Translated text or array of translated texts',
+              description: '翻译后的文本或文本数组',
             },
-            error: { type: 'string', description: 'Error message if the request failed' },
+            error: { type: 'string', description: '请求失败时的错误信息' },
           },
         },
         BatchTranslateRequest: {
@@ -114,39 +109,39 @@ const options = {
             texts: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Array of texts to translate',
+              description: '待翻译的文本数组',
             },
             targetLanguage: {
               type: 'string',
-              description: 'Target language code',
+              description: '目标语言代码',
             },
             sourceLanguage: {
               type: 'string',
-              description: "Source language code (default: 'auto')",
+              description: '源语言代码（默认 auto）',
             },
             translationMethod: {
               type: 'string',
-              description: 'Translation service/method to use',
+              description: '使用的翻译服务/方法',
             },
             useCache: {
               type: 'boolean',
-              description: 'Enable translation caching (default: true)',
+              description: '启用翻译缓存（默认 true）',
             },
             enableProgress: {
               type: 'boolean',
-              description: 'Enable progress tracking (returns jobId)',
+              description: '启用进度跟踪（返回 jobId）',
             },
             config: {
               type: 'object',
               properties: {
-                apiKey: { type: 'string' },
-                region: { type: 'string' },
-                url: { type: 'string' },
-                model: { type: 'string' },
-                temperature: { type: 'number' },
-                batchSize: { type: 'number', description: 'Batch size for context-aware translation' },
-                contextWindow: { type: 'number', description: 'Context window size' },
-                maxConcurrent: { type: 'number', description: 'Maximum concurrent requests' },
+                apiKey: { type: 'string', description: 'API 密钥' },
+                region: { type: 'string', description: '服务区域' },
+                url: { type: 'string', description: '自定义端点 URL' },
+                model: { type: 'string', description: 'LLM 模型名称' },
+                temperature: { type: 'number', description: '温度参数' },
+                batchSize: { type: 'number', description: '上下文感知翻译的批次大小' },
+                contextWindow: { type: 'number', description: '上下文窗口大小' },
+                maxConcurrent: { type: 'number', description: '最大并发请求数' },
               },
             },
           },
@@ -158,7 +153,7 @@ const options = {
             results: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Translated texts',
+              description: '翻译后的文本',
             },
             errors: {
               type: 'array',
@@ -170,7 +165,7 @@ const options = {
                 },
               },
             },
-            jobId: { type: 'string', description: 'Job ID for async processing' },
+            jobId: { type: 'string', description: '异步处理的任务 ID' },
           },
         },
         JobStatusResponse: {
@@ -187,7 +182,7 @@ const options = {
               items: { type: 'string' },
             },
             error: { type: 'string' },
-            createdAt: { type: 'number', description: 'Timestamp in milliseconds' },
+            createdAt: { type: 'number', description: '时间戳（毫秒）' },
             completedAt: { type: 'number' },
           },
         },
@@ -195,14 +190,14 @@ const options = {
           type: 'object',
           properties: {
             success: { type: 'boolean', example: false },
-            error: { type: 'string', description: 'Error message' },
+            error: { type: 'string', description: '错误信息' },
           },
         },
       },
     },
   },
-  apis: ['./src/routes/*.ts'],
-  explorer: true,
+  apis: ['./src/routes/*.ts', './src/routes/*.js'],
+  extensions: ['.ts', '.js'],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
