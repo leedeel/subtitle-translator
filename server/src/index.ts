@@ -12,7 +12,8 @@ const app = createApp();
 
 app.listen(PORT, HOST, () => {
   console.log(`\n🚀 Subtitle Translation Server running on http://${HOST}:${PORT}`);
-  console.log(`📚 API Documentation: http://${HOST}:${PORT}/api`);
+  console.log(`📚 API Documentation (Swagger): http://${HOST}:${PORT}/api-docs`);
+  console.log(`📖 OpenAPI Spec: http://${HOST}:${PORT}/api-docs.json`);
   console.log(`🏥 Health Check: http://${HOST}:${PORT}/api/health`);
   console.log(`📊 Server Info: http://${HOST}:${PORT}/api/health/info\n`);
 });

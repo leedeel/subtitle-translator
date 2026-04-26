@@ -16,6 +16,74 @@ const upload = multer({
 
 const router = Router();
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UploadFileRequest:
+ *       type: object
+ *       properties:
+ *         fileType:
+ *           type: string
+ *           enum: [srt, vtt, ass, lrc]
+ *           description: Optional file type override
+ *     UploadFileResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *         fileType:
+ *           type: string
+ *           enum: [srt, vtt, ass, lrc]
+ *         contentLines:
+ *           type: array
+ *           items:
+ *             type: string
+ *         totalLines:
+ *           type: integer
+ *         error:
+ *           type: string
+ */
+
+/**
+ * @swagger
+ * /upload:
+ *   post:
+ *     tags: [Upload]
+ *     summary: Upload subtitle file
+ *     description: Upload and parse a subtitle file. Automatically detects format unless fileType is specified.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Subtitle file (SRT, VTT, ASS, or LRC format)
+ *               fileType:
+ *                 type: string
+ *                 enum: [srt, vtt, ass, lrc]
+ *                 description: Optional file type override
+ *     responses:
+ *       200:
+ *         description: File processed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UploadFileResponse'
+ *       400:
+ *         description: Bad request (no file or invalid format)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
 // Upload subtitle file
 router.post(
   "/",
@@ -127,6 +195,55 @@ router.post(
     res.send(output);
   })
 );
+
+/**
+ * @swagger
+ * /upload/bilingual:
+ *   post:
+ *     tags: [Upload]
+ *     summary: Generate bilingual subtitle file
+ *     description: Generate a bilingual subtitle file from original and translated lines
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - originalLines
+ *               - translatedLines
+ *             properties:
+ *               originalLines:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Original subtitle lines
+ *               translatedLines:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Translated subtitle lines
+ *               fileType:
+ *                 type: string
+ *                 enum: [srt, vtt, ass, lrc]
+ *                 description: Output file format
+ *               bilingualSubtitle:
+ *                 type: boolean
+ *                 description: Force bilingual ASS output
+ *     responses:
+ *       200:
+ *         description: Bilingual subtitle file
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);

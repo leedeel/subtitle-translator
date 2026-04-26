@@ -14,9 +14,12 @@ router.use("/jobs", jobsRoutes);
 router.use("/health", healthRoutes);
 
 router.get("/", (req, res) => {
+  const baseUrl = req.protocol + "://" + req.get("host");
   res.json({
     name: "Subtitle Translation Server",
     version: "1.0.0",
+    documentation: `${baseUrl}/api-docs`,
+    openapiSpec: `${baseUrl}/api-docs.json`,
     endpoints: {
       translate: "/api/translate",
       batchTranslate: "/api/batch-translate",

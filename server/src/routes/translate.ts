@@ -7,6 +7,35 @@ import { asyncHandler } from "../middleware";
 
 const router = Router();
 
+/**
+ * @swagger
+ * /translate/services:
+ *   get:
+ *     tags: [Services]
+ *     summary: Get available translation services
+ *     description: Returns a list of all available translation services with their labels
+ *     responses:
+ *       200:
+ *         description: List of translation services
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 services:
+ *                   type: object
+ *                   additionalProperties:
+ *                     type: object
+ *                     properties:
+ *                       label:
+ *                         type: string
+ *                       category:
+ *                         type: string
+ *                         enum: [machine-translation, llm, aggregator]
+ */
+
 // Get available translation services
 router.get(
   "/services",
@@ -17,6 +46,46 @@ router.get(
     });
   })
 );
+
+/**
+ * @swagger
+ * /translate/services/{method}/config:
+ *   get:
+ *     tags: [Services]
+ *     summary: Get default configuration for a translation service
+ *     description: Returns the default configuration for a specific translation method
+ *     parameters:
+ *       - in: path
+ *         name: method
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Translation method name (e.g., 'deepseek', 'google', 'openai')
+ *     responses:
+ *       200:
+ *         description: Service configuration
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 method:
+ *                   type: string
+ *                 label:
+ *                   type: string
+ *                 isLLM:
+ *                   type: boolean
+ *                 config:
+ *                   type: object
+ *       404:
+ *         description: Unknown translation method
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 
 // Get default config for a service
 router.get(
@@ -42,6 +111,34 @@ router.get(
     });
   })
 );
+
+/**
+ * @swagger
+ * /translate:
+ *   post:
+ *     tags: [Translation]
+ *     summary: Translate text
+ *     description: Translate a single text or multiple texts to a target language
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/TranslateRequest'
+ *     responses:
+ *       200:
+ *         description: Translation successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TranslateResponse'
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 
 // Translate single text
 router.post(
@@ -103,6 +200,48 @@ router.post(
     res.json(response);
   })
 );
+
+/**
+ * @swagger
+ * /translate/test:
+ *   post:
+ *     tags: [Translation]
+ *     summary: Test translation service
+ *     description: Test if a translation service is accessible and configured correctly
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - translationMethod
+ *             properties:
+ *               translationMethod:
+ *                 type: string
+ *                 description: Translation method to test
+ *               config:
+ *                 type: object
+ *                 description: Configuration for the translation method
+ *               sysPrompt:
+ *                 type: string
+ *                 description: System prompt to test
+ *               userPrompt:
+ *                 type: string
+ *                 description: User prompt to test
+ *     responses:
+ *       200:
+ *         description: Test result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ */
 
 // Test translation
 router.post(

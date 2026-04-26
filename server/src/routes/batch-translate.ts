@@ -8,6 +8,47 @@ import { asyncHandler } from "../middleware";
 
 const router = Router();
 
+/**
+ * @swagger
+ * /batch-translate:
+ *   post:
+ *     tags: [Batch Translation]
+ *     summary: Batch translate texts
+ *     description: Translate multiple texts with optional progress tracking. Set enableProgress to true for async processing.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/BatchTranslateRequest'
+ *     responses:
+ *       200:
+ *         description: Translation completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BatchTranslateResponse'
+ *       202:
+ *         description: Translation started (async mode)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 jobId:
+ *                   type: string
+ *                   description: Job ID for tracking progress
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
 // Job storage (in-memory for demo, use Redis/database in production)
 const jobs = new Map<string, {
   status: "pending" | "processing" | "completed" | "failed";
@@ -171,6 +212,35 @@ router.get(
     res.json(response);
   })
 );
+
+/**
+ * @swagger
+ * /batch-translate/jobs/{jobId}:
+ *   get:
+ *     tags: [Batch Translation]
+ *     summary: Get batch translation job status
+ *     description: Check the status of an async batch translation job
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Job ID returned from batch translate request
+ *     responses:
+ *       200:
+ *         description: Job status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/JobStatusResponse'
+ *       404:
+ *         description: Job not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 
 // Clean up old jobs (older than 1 hour)
 const cleanupOldJobs = (): void => {
