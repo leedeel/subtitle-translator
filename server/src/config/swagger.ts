@@ -198,6 +198,24 @@ const options = {
             error: { type: "string", description: "Error message" },
           },
         },
+        UploadFileResponse: {
+          type: "object",
+          properties: {
+            success: { type: "boolean", description: "Whether the upload was successful" },
+            fileType: {
+              type: "string",
+              enum: ["srt", "vtt", "ass", "lrc"],
+              description: "Detected or specified subtitle file type",
+            },
+            contentLines: {
+              type: "array",
+              items: { type: "string" },
+              description: "Extracted subtitle content lines",
+            },
+            totalLines: { type: "number", description: "Total number of content lines" },
+            error: { type: "string", description: "Error message if upload failed" },
+          },
+        },
       },
     },
   },
