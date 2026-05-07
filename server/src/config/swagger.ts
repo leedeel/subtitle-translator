@@ -220,8 +220,6 @@ const options = {
     },
   },
   apis: ["./src/routes/*.ts"],
-  explorer: true,
-};
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

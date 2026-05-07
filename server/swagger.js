@@ -193,6 +193,24 @@ const options = {
             error: { type: 'string', description: '错误信息' },
           },
         },
+        UploadFileResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', description: '上传是否成功' },
+            fileType: {
+              type: 'string',
+              enum: ['srt', 'vtt', 'ass', 'lrc'],
+              description: '检测到或指定的字幕文件类型',
+            },
+            contentLines: {
+              type: 'array',
+              items: { type: 'string' },
+              description: '提取的字幕内容行',
+            },
+            totalLines: { type: 'number', description: '内容行总数' },
+            error: { type: 'string', description: '上传失败时的错误信息' },
+          },
+        },
       },
     },
   },
