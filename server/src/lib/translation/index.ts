@@ -1,6 +1,6 @@
 // Main translation module
 
-import type { TranslateTextParams, TranslationMethod } from "../types";
+import type { TranslateTextParams, TranslationMethod } from "../../types";
 import { translationServices } from "./services";
 import { generateCacheKey, getCachedTranslation, setCachedTranslation } from "./cache";
 import { cleanTranslatedText } from "./utils";

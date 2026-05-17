@@ -1,7 +1,7 @@
 // Translation utility functions
 
 import { languages, isMethodSupportedForLanguage } from "./languages-data";
-import type { TranslationMethod } from "../types";
+import type { TranslationMethod } from "../../types";
 
 const languageNameMap = new Map(languages.map((lang) => [lang.value, lang.name]));
 const validLanguageCodes = new Set(languages.map((lang) => lang.value));

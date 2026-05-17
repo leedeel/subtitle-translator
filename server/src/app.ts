@@ -5,6 +5,7 @@ import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
+// @ts-ignore
 import swaggerSpec from "../swagger.js";
 import routes from "./routes";
 import { errorHandler } from "./middleware";
@@ -26,7 +27,7 @@ const createApp = (): Express => {
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
   // API documentation
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec as any, {
     customSiteTitle: "Subtitle Translator API",
     customCss: ".swagger-ui .topbar { display: none }",
     swaggerOptions: {
@@ -37,7 +38,7 @@ const createApp = (): Express => {
   }));
 
   // Swagger JSON endpoint
-  app.get("/api-docs.json", (req, res) => {
+  app.get("/api-docs.json", (_req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.send(swaggerSpec);
   });
@@ -46,7 +47,7 @@ const createApp = (): Express => {
 
   app.use(errorHandler);
 
-  app.use((req, res) => {
+  app.use((_req, res) => {
     res.status(404).json({
       success: false,
       error: "Not found",

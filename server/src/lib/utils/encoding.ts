@@ -6,7 +6,7 @@ export const readEncoding = async (buffer: Buffer): Promise<string> => {
   const detected = jschardet.detect(buffer);
 
   if (detected.encoding && detected.confidence > 0.7) {
-    const encoding = normalizeEncoding(detected.encoding);
+    const encoding = normalizeEncoding(detected.encoding) as BufferEncoding;
     try {
       const decoded = buffer.toString(encoding);
       if (isValidUTF8(decoded)) {

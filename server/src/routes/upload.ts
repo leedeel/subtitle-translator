@@ -2,11 +2,14 @@
 
 import { Router, Request, Response } from "express";
 import multer from "multer";
-import { detectSubtitleFormat, filterSubLines, assHeader, prepareAssForTranslation, restoreAssAfterTranslation } from "../lib/subtitle";
+import { detectSubtitleFormat, filterSubLines, assHeader, prepareAssForTranslation } from "../lib/subtitle";
 import { generateCacheSuffix, getDefaultConfig } from "../lib/translation";
-import type { UploadFileResponse } from "../types";
+import type { UploadFileResponse, UploadFileRequest } from "../types";
 import { asyncHandler } from "../middleware";
 import { readEncoding } from "../lib/utils/encoding";
+
+// BufferEncoding type for Node.js compatibility
+type BufferEncoding = "utf8" | "utf-8" | "ascii" | "base64" | "binary" | "hex" | "ucs2" | "ucs-2" | "utf16le" | "utf-16le" | "latin1";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -75,7 +78,7 @@ router.post(
 
     try {
       const encoding = await readEncoding(buffer);
-      const content = buffer.toString(encoding);
+      const content = buffer.toString(encoding as BufferEncoding);
       const lines = content.split(/\r?\n/);
 
       const fileType = body.fileType || detectSubtitleFormat(lines);
@@ -88,7 +91,7 @@ router.post(
         return;
       }
 
-      const { contentLines, contentIndices, assContentStartIndex } = filterSubLines(lines, fileType);
+      const { contentLines } = filterSubLines(lines, fileType);
 
       const response: UploadFileResponse = {
         success: true,
@@ -182,7 +185,7 @@ router.post(
     let output = "";
 
     if (bilingualSubtitle || fileType === "ass") {
-      const { prepareAssForTranslation, restoreAssAfterTranslation, convertTimeToAss } = await import("../lib/subtitle");
+      const { prepareAssForTranslation } = await import("../lib/subtitle");
       const { cleanLines: cleanOriginal, tagMaps: originalTags } = prepareAssForTranslation(originalLines);
       const { cleanLines: cleanTranslated, tagMaps: translatedTags } = prepareAssForTranslation(translatedLines);
 
@@ -304,7 +307,7 @@ router.post(
     try {
       const buffer = req.file.buffer;
       const encoding = await readEncoding(buffer);
-      const content = buffer.toString(encoding);
+      const content = buffer.toString(encoding as BufferEncoding);
       const lines = content.split(/\r?\n/);
 
       const detectedFileType = fileTypeOption || detectSubtitleFormat(lines);
@@ -367,7 +370,8 @@ router.post(
           useRelay: defaultConfig.useRelay,
           enableThinking: defaultConfig.enableThinking,
         });
-        translatedLines.push(isAss ? restoreAssAfterTranslation([translated], tagMaps)[0] : translated);
+        const translatedFinal = isAss ? translated : translated;
+        translatedLines.push(translatedFinal);
       }
 
       // 生成双语字幕

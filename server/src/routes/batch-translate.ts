@@ -103,6 +103,7 @@ router.post(
         targetLanguage,
         sourceLanguage,
         cacheSuffix,
+        translationMethod,
         useCache,
         apiKey: mergedConfig.apiKey,
         region: mergedConfig.region,
@@ -131,6 +132,7 @@ router.post(
             targetLanguage,
             sourceLanguage,
             cacheSuffix,
+            translationMethod,
             useCache,
             apiKey: mergedConfig.apiKey,
             region: mergedConfig.region,
@@ -158,6 +160,7 @@ router.post(
             targetLanguage,
             sourceLanguage,
             cacheSuffix,
+            translationMethod,
             useCache,
             apiKey: mergedConfig.apiKey,
             region: mergedConfig.region,
@@ -262,6 +265,7 @@ async function processBatchTranslateAsync(
     targetLanguage: string;
     sourceLanguage: string;
     cacheSuffix: string;
+    translationMethod: string;
     useCache: boolean;
     apiKey?: string;
     region?: string;

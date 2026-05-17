@@ -1,7 +1,7 @@
 // Translation services - Traditional APIs (GTX, Google, DeepL, Azure)
 // Adapted from browser version for server-side use
 
-import type { TranslationService } from "../types";
+import type { TranslationService } from "../../../types";
 import { defaultConfigs } from "../registry";
 import { fetchJSON, requireApiKey, PROXY_ENDPOINTS, THIRD_PARTY_ENDPOINTS, getOpenAICompatContent } from "../shared";
 

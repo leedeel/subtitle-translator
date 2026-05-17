@@ -1,6 +1,6 @@
 // Translation services dispatch table
 
-import type { TranslateTextParams, TranslationService } from "../types";
+import type { TranslateTextParams, TranslationService } from "../../../types";
 import { gtxFreeAPI, google, deepl, azure, deeplx, qwenMt } from "./traditional";
 import {
   deepseek,

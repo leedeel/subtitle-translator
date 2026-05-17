@@ -2,7 +2,7 @@
 
 import pLimit from "p-limit";
 import pRetry from "p-retry";
-import type { TranslateTextParams, TranslationService } from "./translation";
+import type { TranslateTextParams } from "../types";
 
 interface BatchTranslateOptions {
   texts: string[];
@@ -25,7 +25,7 @@ export const batchTranslate = async (options: BatchTranslateOptions): Promise<Ba
   const { texts, translationMethod, params, maxConcurrent = 10, onProgress, retryOptions = {} } = options;
   const { retries = 3, onFailedAttempt } = retryOptions;
 
-  const service = translationMethod as keyof typeof import("./translation");
+  const service = translationMethod;
   const results = new Array(texts.length).fill("");
   const errors: Array<{ index: number; error: string }> = [];
 
@@ -46,10 +46,10 @@ export const batchTranslate = async (options: BatchTranslateOptions): Promise<Ba
       },
       {
         retries,
-        onFailedAttempt: (error: Error) => {
-          console.warn(`Translation failed for item ${index}, attempt ${error.attemptNumber}:`, error.message);
+        onFailedAttempt: (context: any) => {
+          console.warn(`Translation failed for item ${index}, attempt ${context.attemptNumber}:`, context.message);
           if (onFailedAttempt) {
-            onFailedAttempt(error);
+            onFailedAttempt(context);
           }
         },
         shouldRetry: (error) => {

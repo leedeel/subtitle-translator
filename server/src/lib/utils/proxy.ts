@@ -7,7 +7,7 @@ export const initProxyAgents = (): void => {
   const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy;
   const httpsProxy = process.env.HTTPS_PROXY || process.env.https_proxy;
 
-  proxyUrl = httpsProxy || httpProxy;
+  proxyUrl = httpsProxy || httpProxy || null;
 
   if (proxyUrl) {
     console.log(`Using proxy: ${proxyUrl}`);

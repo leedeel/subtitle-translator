@@ -23,6 +23,8 @@ export interface TranslateRequest {
   }>;
   useCache?: boolean;
   enableProgress?: boolean;
+  sysPrompt?: string;
+  userPrompt?: string;
 }
 
 export interface TranslateResponse {
@@ -56,6 +58,7 @@ export interface BatchTranslateRequest {
     maxConcurrent?: number;
   }>;
   useCache?: boolean;
+  enableProgress?: boolean;
 }
 
 export interface BatchTranslateResponse {

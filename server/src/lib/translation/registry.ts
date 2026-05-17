@@ -1,7 +1,7 @@
 // Single source of truth for every translation provider.
 // Adapted from browser version for server-side use.
 
-import type { TranslationConfig, TranslationServiceInfo } from "../types";
+import type { TranslationConfig, TranslationServiceInfo } from "../../types";
 
 export type ServiceCategory = "machine-translation" | "llm" | "aggregator";
 

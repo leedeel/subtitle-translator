@@ -1,11 +1,11 @@
 // Translation services - LLM APIs (OpenAI, DeepSeek, Gemini, etc.)
 // Adapted from browser version for server-side use
 
-import type { TranslateTextParams, TranslationService } from "../types";
+import type { TranslateTextParams, TranslationService } from "../../../types";
 import { DEFAULT_SYS_PROMPT, DEFAULT_USER_PROMPT } from "../config";
 import { defaultConfigs, OPENAI_COMPAT_KEYS, OPENAI_COMPAT_PROVIDERS, type OpenAICompatProviderKey, type OpenAICompatProviderSpec } from "../registry";
 import { getAIModelPrompt } from "../utils";
-import { fetchJSON, normalizeNumber, normalizePrompt, relayUrl, requireApiKey, requireUrl, getOpenAICompatContent, getClaudeContent } from "../shared";
+import { fetchJSON, normalizeNumber, normalizePrompt, relayUrl, requireApiKey, requireUrl, getOpenAICompatContent, getClaudeContent, PROXY_ENDPOINTS } from "../shared";
 
 const preparePrompts = (params: {
   text: string;
