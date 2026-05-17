@@ -34,6 +34,7 @@ RUN yarn install --frozen-lockfile --production --network-timeout 100000
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 
 # 复制其他必要文件
+COPY --chown=nodejs:nodejs swagger.js ./
 COPY --chown=nodejs:nodejs .env.example ./
 
 USER nodejs
