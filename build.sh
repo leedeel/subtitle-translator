@@ -229,10 +229,6 @@ main() {
     echo ""
     log_info "启动服务:"
     echo "  docker-compose up -d"
-    echo ""
-    log_info "或使用生产配置:"
-    echo "  docker-compose -f docker-compose.prod.yml up -d"
-    echo ""
 }
 
 # 执行主流程
