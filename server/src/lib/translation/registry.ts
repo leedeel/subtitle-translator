@@ -253,6 +253,38 @@ type ProviderKey = keyof typeof PROVIDERS;
 
 const INTERNAL_PROVIDERS: ReadonlySet<string> = new Set([]);
 
+/**
+ * Provider keys that require an API key supplied via environment variable.
+ * Listed entries are hidden from GET /api/translate/services unless the
+ * corresponding env var is set. Entries not in this map are treated as
+ * "keyless" (always shown) — covers gtxFreeAPI / deeplx / llm.
+ * Providers that also require a URL (nvidia / azureopenai) are intentionally
+ * excluded because the env var alone is not enough to make them usable.
+ * Naming convention: <PROVIDER_UPPER_SNAKE>_API_KEY, matching .env.example.
+ */
+const PROVIDER_API_KEY_ENV: Record<string, string> = {
+  google: "GOOGLE_API_KEY",
+  deepl: "DEEPL_API_KEY",
+  azure: "AZURE_API_KEY",
+  qwenMt: "QWEN_MT_API_KEY",
+  deepseek: "DEEPSEEK_API_KEY",
+  openai: "OPENAI_API_KEY",
+  claude: "CLAUDE_API_KEY",
+  gemini: "GEMINI_API_KEY",
+  qwen: "QWEN_API_KEY",
+  moonshot: "MOONSHOT_API_KEY",
+  zhipu: "ZHIPU_API_KEY",
+  doubao: "DOUBAO_API_KEY",
+  grok: "GROK_API_KEY",
+  mistral: "MISTRAL_API_KEY",
+  perplexity: "PERPLEXITY_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+  groq: "GROQ_API_KEY",
+  siliconflow: "SILICONFLOW_API_KEY",
+  nvidia: "NVIDIA_API_KEY",
+  azureopenai: "AZUREOPENAI_API_KEY",
+};
+
 export type OpenAICompatProviderKey = {
   [K in keyof typeof PROVIDERS]: (typeof PROVIDERS)[K] extends { kind: "openai-compat" } ? K : never;
 }[keyof typeof PROVIDERS];
@@ -269,6 +301,11 @@ export const LLM_MODELS: string[] = Object.entries(PROVIDERS)
 
 export const TRANSLATION_SERVICES: TranslationServiceInfo[] = Object.entries(PROVIDERS)
   .filter(([k]) => !INTERNAL_PROVIDERS.has(k))
+  .filter(([k]) => {
+    const envVar = PROVIDER_API_KEY_ENV[k];
+    if (!envVar) return true; // provider is keyless — always advertise
+    return Boolean(process.env[envVar]?.trim()); // require env var to be set
+  })
   .map(([value, p]) => {
     const spec = p as ProviderSpec;
     return {

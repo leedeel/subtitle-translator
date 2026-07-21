@@ -1,10 +1,13 @@
 # ============ 构建阶段 ============
-FROM node:24-alpine AS builder
+FROM docker.1ms.run/library/node:24-alpine AS builder
 
 WORKDIR /app
 
 # 复制 package 文件
 COPY package.json yarn.lock ./
+
+# 【核心步骤】：在安装依赖前，一键切换为国内高速镜像源（此处以腾讯云为例，也可换成淘宝源）
+RUN yarn config set registry https://tencent.com
 
 # 安装依赖
 RUN yarn install --frozen-lockfile --network-timeout 100000
@@ -16,7 +19,7 @@ COPY . .
 RUN yarn build
 
 # ============ 运行阶段 ============
-FROM node:24-alpine AS runner
+FROM docker.1ms.run/library/node:24-alpine AS runner
 
 WORKDIR /app
 
@@ -28,6 +31,9 @@ RUN adduser --system --uid 1001 nodejs
 
 # 复制 package 文件和依赖
 COPY package.json yarn.lock ./
+
+# 【核心步骤】：在安装依赖前，一键切换为国内高速镜像源（此处以腾讯云为例，也可换成淘宝源）
+RUN yarn config set registry https://tencent.com
 RUN yarn install --frozen-lockfile --production --network-timeout 100000
 
 # 复制构建产物
