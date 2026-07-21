@@ -28,8 +28,8 @@ services:
       # LLM 中转服务
       - LLM_RELAY_BASE=https://llm-proxy.aishort.top
       # 代理配置（如需要，请取消注释并修改）
-      - HTTP_PROXY=http://127.0.0.1:7890
-      - HTTPS_PROXY=http://127.0.0.1:7890
+      - HTTP_PROXY=http://host.docker.internal:7890
+      - HTTPS_PROXY=http://host.docker.internal:7890
       # - NO_PROXY=localhost,127.0.0.1
     networks:
       - subtitle-network
