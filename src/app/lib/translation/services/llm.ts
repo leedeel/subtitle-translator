@@ -81,11 +81,40 @@ const makeOpenAICompat = (key: OpenAICompatProviderKey): TranslationService => {
 // Auto-generate base services from the provider table
 const baseOpenAICompatServices = Object.fromEntries(OPENAI_COMPAT_KEYS.map((k) => [k, makeOpenAICompat(k)])) as Record<OpenAICompatProviderKey, TranslationService>;
 
-// DeepSeek: wraps the factory with CORS/403 error hints that point users at
-// the "API Relay" toggle. Applies only on direct-call failures.
+// DeepSeek: 直接构造请求以附带新版 API 的 `thinking` 字段，并保留原有的 CORS/403 错误提示。
+// 走 OpenAI-compat 通用工厂无法挂载 thinking 参数，因此这里不复用 baseOpenAICompatServices。
 export const deepseek: TranslationService = async (params) => {
+  const { apiKey, model, temperature, enableThinking } = params;
+  const { effectiveSysPrompt, prompt } = preparePrompts(params);
+
+  const spec = OPENAI_COMPAT_PROVIDERS.deepseek as OpenAICompatProviderSpec;
+  const endpoint = resolveEndpoint("deepseek", spec, params);
+  const key = requireApiKey(spec.label, apiKey);
+  const effectiveModel = model || spec.defaultModel;
+  // DeepSeek 官方默认 thinking.type=enabled；只有显式 enableThinking === false 才关闭
+  const thinkingType: "enabled" | "disabled" = enableThinking === false ? "disabled" : "enabled";
+
   try {
-    return await baseOpenAICompatServices.deepseek(params);
+    const data = await fetchJSON(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+        ...(spec.extraHeaders ?? {}),
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: effectiveSysPrompt },
+          { role: "user", content: prompt },
+        ],
+        model: effectiveModel,
+        temperature: normalizeNumber(temperature, spec.defaultTemperature),
+        stream: false,
+        thinking: { type: thinkingType },
+      }),
+      signal: params.signal,
+    });
+    return getOpenAICompatContent(data, spec.label);
   } catch (error) {
     if (!params.useRelay && error instanceof Error) {
       if (error instanceof TypeError && error.message.includes("Failed to fetch")) {

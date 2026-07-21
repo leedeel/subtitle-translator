@@ -55,5 +55,10 @@ export const migrateConfig = (saved: TranslationConfig | undefined, defaults: Tr
   for (const key of Object.keys(merged)) {
     if (!(key in defaults)) delete merged[key];
   }
+  // DeepSeek 旧模型 ID 弃用迁移：deepseek-chat / deepseek-reasoner 在 2026/07/24 后将不可用，
+  // 官方保持兼容别名至弃用时刻，但为安全起见直接映射到 v4-flash。
+  if (merged.model === "deepseek-chat" || merged.model === "deepseek-reasoner") {
+    merged.model = "deepseek-v4-flash";
+  }
   return merged as TranslationConfig;
 };

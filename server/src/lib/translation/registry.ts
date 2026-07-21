@@ -81,8 +81,10 @@ export const PROVIDERS = {
     category: "llm",
     label: "DeepSeek",
     endpoint: "https://api.deepseek.com/chat/completions",
-    defaultModel: "deepseek-chat",
-    defaultTemperature: 0.7,
+    // deepseek-chat / deepseek-reasoner 在 2026/07/24 15:59 UTC 弃用，v4-flash 是官方推荐的平价替代
+    defaultModel: "deepseek-v4-flash",
+    // 对齐 DeepSeek 官方 API 文档 temperature 默认值
+    defaultTemperature: 1,
     docs: "https://api-docs.deepseek.com/",
     apiKeyUrl: "https://platform.deepseek.com/api_keys",
     allowRelay: true,
