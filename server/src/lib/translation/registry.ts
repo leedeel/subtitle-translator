@@ -287,6 +287,18 @@ const PROVIDER_API_KEY_ENV: Record<string, string> = {
   azureopenai: "AZUREOPENAI_API_KEY",
 };
 
+/**
+ * Resolve a provider API key at request time.
+ * Request-scoped keys take precedence over server-side environment variables.
+ */
+export const resolveProviderApiKey = (provider: string, apiKey?: string): string | undefined => {
+  const requestKey = apiKey?.trim();
+  if (requestKey) return requestKey;
+
+  const envVar = PROVIDER_API_KEY_ENV[provider];
+  return envVar ? process.env[envVar]?.trim() || undefined : undefined;
+};
+
 export type OpenAICompatProviderKey = {
   [K in keyof typeof PROVIDERS]: (typeof PROVIDERS)[K] extends { kind: "openai-compat" } ? K : never;
 }[keyof typeof PROVIDERS];

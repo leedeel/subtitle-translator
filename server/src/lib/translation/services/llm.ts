@@ -3,7 +3,7 @@
 
 import type { TranslateTextParams, TranslationService } from "../../../types";
 import { DEFAULT_SYS_PROMPT, DEFAULT_USER_PROMPT } from "../config";
-import { defaultConfigs, OPENAI_COMPAT_KEYS, OPENAI_COMPAT_PROVIDERS, type OpenAICompatProviderKey, type OpenAICompatProviderSpec } from "../registry";
+import { defaultConfigs, OPENAI_COMPAT_KEYS, OPENAI_COMPAT_PROVIDERS, resolveProviderApiKey, type OpenAICompatProviderKey, type OpenAICompatProviderSpec } from "../registry";
 import { getAIModelPrompt } from "../utils";
 import { fetchJSON, normalizeNumber, normalizePrompt, relayUrl, requireApiKey, requireUrl, getOpenAICompatContent, getClaudeContent, PROXY_ENDPOINTS } from "../shared";
 
@@ -89,7 +89,7 @@ export const deepseek: TranslationService = async (params) => {
 
   const spec = OPENAI_COMPAT_PROVIDERS.deepseek as OpenAICompatProviderSpec;
   const endpoint = resolveEndpoint("deepseek", spec, params);
-  const key = requireApiKey(spec.label, apiKey);
+  const key = requireApiKey(spec.label, resolveProviderApiKey("deepseek", apiKey));
   const effectiveModel = model || spec.defaultModel;
   // DeepSeek 官方默认 thinking.type=enabled；只有显式 enableThinking === false 才关闭
   const thinkingType: "enabled" | "disabled" = enableThinking === false ? "disabled" : "enabled";
