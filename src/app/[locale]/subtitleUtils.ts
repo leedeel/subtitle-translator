@@ -171,9 +171,54 @@ export const convertTimeToAss = (time: string): string => {
   const match = time.match(TIME_REGEX);
   if (!match) return time;
   const [, hours, minutes, seconds, ms] = match;
-  // 处理毫秒：确保转换为两位厘秒。如果输入是毫秒（3 位数），取前两位；如果只有一位数如 9，用 0 填充，显示为 09。
-  const msValue = ms.length >= 2 ? ms.substring(0, 2) : ms.padStart(2, "0");
+  // 处理毫秒：转换为厘秒（1厘秒=10毫秒），向下取整
+  const milliseconds = parseInt(ms.padEnd(3, "0"), 10); // 确保3位数
+  const centiseconds = Math.floor(milliseconds / 10); // 毫秒→厘秒
+  const msValue = centiseconds.toString().padStart(2, "0"); // 确保两位格式
   return `${parseInt(hours || "0", 10)}:${minutes}:${seconds}.${msValue}`;
+};
+
+// 时间戳格式类型
+export type TimestampFormat = 'srt' | 'vtt' | 'ass' | 'lrc';
+
+/**
+ * 通用时间戳转换函数，支持多种格式
+ * @param time - 输入时间戳 (支持 "HH:MM:SS,mmm" 或 "HH:MM:SS.mmm")
+ * @param format - 输出格式类型
+ * @returns 格式化后的时间戳字符串
+ */
+export const convertTimestamp = (time: string, format: TimestampFormat): string => {
+  const match = time.match(TIME_REGEX);
+  if (!match) return time;
+  const [, hours, minutes, seconds, ms] = match;
+
+  const hoursNum = parseInt(hours || "0", 10);
+  const minutesNum = parseInt(minutes, 10);
+  const secondsNum = parseInt(seconds, 10);
+  const milliseconds = parseInt(ms.padEnd(3, "0"), 10);
+
+  switch (format) {
+    case 'srt':
+      // SRT 格式：HH:MM:SS,mmm (三位毫秒，逗号分隔)
+      return `${hoursNum.toString().padStart(2, '0')}:${minutes}:${seconds.toString().padStart(2, '0')},${milliseconds.toString().padStart(3, '0')}`;
+
+    case 'vtt':
+      // VTT 格式：HH:MM:SS.mmm (三位毫秒，句点分隔)
+      return `${hoursNum.toString().padStart(2, '0')}:${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+
+    case 'lrc':
+      // LRC 格式：[MM:SS.mm] (两位厘秒)
+      const centiseconds = Math.floor(milliseconds / 10);
+      return `[${minutes}:${seconds.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}]`;
+
+    case 'ass':
+      // ASS 格式：H:MM:SS.cc (两位厘秒)
+      const assCentiseconds = Math.floor(milliseconds / 10);
+      return `${hoursNum}:${minutes}:${seconds.toString().padStart(2, '0')}.${assCentiseconds.toString().padStart(2, '0')}`;
+
+    default:
+      return time;
+  }
 };
 
 // ASS 覆盖标签处理：翻译前剥离，翻译后还原
