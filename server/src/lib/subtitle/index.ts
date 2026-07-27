@@ -148,13 +148,16 @@ export const convertTimeToAss = (time: string): string => {
   const match = time.match(TIME_REGEX);
   if (!match) return time;
   const [, hours, minutes, seconds, ms] = match;
-  const msValue = ms.length >= 2 ? ms.substring(0, 2) : ms.padStart(2, "0");
+  // 处理毫秒：转换为厘秒（1厘秒=10毫秒），向下取整
+  const milliseconds = parseInt(ms.padEnd(3, "0"), 10); // 确保3位数
+  const centiseconds = Math.floor(milliseconds / 10); // 毫秒→厘秒
+  const msValue = centiseconds.toString().padStart(2, "0"); // 确保两位格式
   return `${parseInt(hours || "0", 10)}:${minutes}:${seconds}.${msValue}`;
 };
 
 const ASS_LEADING_TAGS_REGEX = /^(\{[^}]*\})+/;
 const ASS_ALL_TAGS_REGEX = /\{[^}]*\}/g;
-const ASS_NEWLINE_REGEX = /\[Nn]/g;
+const ASS_NEWLINE_REGEX = /\\[Nn]/g;
 
 interface AssTagMap {
   leadingTags: string;
@@ -188,7 +191,7 @@ export const restoreAssAfterTranslation = (translatedLines: string[], tagMaps: A
     const map = tagMaps[i];
     if (!map) return line;
 
-    let restored = line.replace(/\n/g, "\N");
+    let restored = line.replace(/\n/g, "\\N");
 
     if (map.leadingTags) {
       restored = map.leadingTags + restored;

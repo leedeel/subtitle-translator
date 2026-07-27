@@ -2,7 +2,7 @@
 
 import { Router, Request, Response } from "express";
 import multer from "multer";
-import { detectSubtitleFormat, filterSubLines, assHeader, prepareAssForTranslation } from "../lib/subtitle";
+import { detectSubtitleFormat, filterSubLines, assHeader, prepareAssForTranslation, restoreAssAfterTranslation, convertTimeToAss, VTT_SRT_TIME } from "../lib/subtitle";
 import { generateCacheSuffix, getDefaultConfig } from "../lib/translation";
 import type { UploadFileResponse, UploadFileRequest } from "../types";
 import { asyncHandler } from "../middleware";
@@ -185,14 +185,16 @@ router.post(
     let output = "";
 
     if (bilingualSubtitle || fileType === "ass") {
-      const { prepareAssForTranslation } = await import("../lib/subtitle");
+      const { prepareAssForTranslation, restoreAssAfterTranslation } = await import("../lib/subtitle");
       const { cleanLines: cleanOriginal, tagMaps: originalTags } = prepareAssForTranslation(originalLines);
       const { cleanLines: cleanTranslated, tagMaps: translatedTags } = prepareAssForTranslation(translatedLines);
 
-      const bilingualLines = cleanOriginal.map((orig, i) => {
-        const origTag = originalTags[i]?.leadingTags || "";
-        const transTag = translatedTags[i]?.leadingTags || "";
-        return `${origTag}${orig}\N${transTag}${cleanTranslated[i]}`;
+      // 还原 ASS 标签与换行符（\N），避免真换行泄漏进 Dialogue 行
+      const restoredOriginal = restoreAssAfterTranslation(cleanOriginal, originalTags);
+      const restoredTranslated = restoreAssAfterTranslation(cleanTranslated, translatedTags);
+
+      const bilingualLines = restoredOriginal.map((orig, i) => {
+        return `${orig}\\N${restoredTranslated[i]}`;
       });
 
       output = assHeader + "\n";
@@ -370,9 +372,11 @@ router.post(
           useRelay: defaultConfig.useRelay,
           enableThinking: defaultConfig.enableThinking,
         });
-        const translatedFinal = isAss ? translated : translated;
-        translatedLines.push(translatedFinal);
+        translatedLines.push(translated);
       }
+
+      // ASS：还原标签与换行符（\N），与 prepareAssForTranslation 对称
+      const finalTranslatedLines = isAss ? restoreAssAfterTranslation(translatedLines, tagMaps) : translatedLines;
 
       // 生成双语字幕
       const translatedTextArray = [...lines];
@@ -382,9 +386,9 @@ router.post(
           const originalLine = lines[index];
           const prefix = originalLine.substring(0, originalLine.split(",", assContentStartIndex).join(",").length + 1);
           if (bilingualPosition === "below") {
-            translatedTextArray[index] = `${originalLine}\\N${prefix}${translatedLines[i]}`;
+            translatedTextArray[index] = `${originalLine}\\N${prefix}${finalTranslatedLines[i]}`;
           } else {
-            translatedTextArray[index] = `${prefix}${translatedLines[i]}\\N${originalLine.split(",").slice(assContentStartIndex).join(",").trim()}`;
+            translatedTextArray[index] = `${prefix}${finalTranslatedLines[i]}\\N${originalLine.split(",").slice(assContentStartIndex).join(",").trim()}`;
           }
         } else if (detectedFileType === "lrc") {
           const originalLine = lines[index];
@@ -393,15 +397,15 @@ router.post(
           const originalContent = originalLine.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, "").trim();
 
           if (bilingualPosition === "below") {
-            translatedTextArray[index] = `${timePrefix} ${originalContent} / ${translatedLines[i]}`;
+            translatedTextArray[index] = `${timePrefix} ${originalContent} / ${finalTranslatedLines[i]}`;
           } else {
-            translatedTextArray[index] = `${timePrefix} ${translatedLines[i]} / ${originalContent}`;
+            translatedTextArray[index] = `${timePrefix} ${finalTranslatedLines[i]} / ${originalContent}`;
           }
         } else {
           // SRT/VTT
           translatedTextArray[index] = bilingualPosition === "below"
-            ? `${lines[index]}\n${translatedLines[i]}`
-            : `${translatedLines[i]}\n${lines[index]}`;
+            ? `${lines[index]}\n${finalTranslatedLines[i]}`
+            : `${finalTranslatedLines[i]}\n${lines[index]}`;
         }
       });
 
@@ -418,7 +422,7 @@ router.post(
 
           while (searchIndex >= 0) {
             const line = lines[searchIndex];
-            if (/(\d{2}:\d{2}:\d{2}[,\.]\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}[,\.]\d{3})/.test(line)) {
+            if (VTT_SRT_TIME.test(line.trim())) {
               timeLine = line;
               break;
             }
@@ -427,17 +431,15 @@ router.post(
 
           if (!timeLine) return;
 
-          const timeMatch = timeLine.match(/(\d{2}:\d{2}:\d{2})[,\.](\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2})[,\.](\d{3})/);
-          if (!timeMatch) return;
+          const [startTime, endTime] = timeLine.split("-->").map((t) => t.trim().split(/\s/)[0]);
+          if (!startTime || !endTime) return;
 
-          const startTime = timeMatch[1].replace(/:/g, ":");
-          const endTime = timeMatch[3].replace(/:/g, ":");
-          const assStartTime = startTime.replace(/(\d{2}):(\d{2}):(\d{2})/, "$1:$2:$3.$4");
-          const assEndTime = endTime.replace(/(\d{2}):(\d{2}):(\d{2})/, "$1:$2:$3.$5");
+          const assStartTime = convertTimeToAss(startTime);
+          const assEndTime = convertTimeToAss(endTime);
 
           const key = `${assStartTime} --> ${assEndTime}`;
           const originalText = lines[index];
-          const translatedText = translatedLines[i];
+          const translatedText = finalTranslatedLines[i];
 
           const isFirstOriginal = bilingualPosition === "above";
           const firstText = isFirstOriginal ? originalText : translatedText;
