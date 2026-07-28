@@ -1,18 +1,15 @@
-# 生产环境 Docker Compose 配置
-# 使用示例: docker-compose -f docker-compose.yml up -d
+# 测试环境 Docker Compose 配置
+# 使用示例: docker-compose -f docker-compose.test.yml up -d
 services:
   # 独立服务端
   server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    image: subtitle-translator-server:latest
-    container_name: subtitle-translator-server
+    image: subtitle-translator-server:test-1aeef54
+    container_name: subtitle-translator-server-test
     ports:
-      - "3001:3001"
+      - "3002:3002"
     environment:
       - NODE_ENV=production
-      - PORT=3001
+      - PORT=3002
       - HOST=0.0.0.0
       - CORS_ORIGIN=*
       # 缓存配置
@@ -25,15 +22,16 @@ services:
       # LLM 中转服务
       - LLM_RELAY_BASE=https://llm-proxy.aishort.top
       # 代理配置（如需要，请取消注释并修改）
-      - HTTP_PROXY=http://host.docker.internal:7890
-      - HTTPS_PROXY=http://host.docker.internal:7890
+      # - HTTP_PROXY=http://host.docker.internal:7890
+      # - HTTPS_PROXY=http://host.docker.internal:7890
       # - NO_PROXY=localhost,127.0.0.1
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      # API 密钥（请根据需要设置）
+      # - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     networks:
-      - subtitle-network
-    restart: always
+      - test-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -43,7 +41,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    # 资源限制
     deploy:
       resources:
         limits:
@@ -54,6 +51,6 @@ services:
           memory: "512M"
 
 networks:
-  subtitle-network:
+  test-network:
     driver: bridge
-    name: subtitle-production-network
+    name: subtitle-test-network

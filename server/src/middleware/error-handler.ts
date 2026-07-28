@@ -21,7 +21,7 @@ export const errorHandler = (
 ): void => {
   console.error("Error:", err);
 
-  const statusCode = "statusCode" in err ? err.statusCode : 500;
+  const statusCode = "statusCode" in err && err.statusCode ? err.statusCode : 500;
   const message = err.message || "Internal Server Error";
 
   res.status(statusCode).json({

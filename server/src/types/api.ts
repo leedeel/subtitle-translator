@@ -82,6 +82,23 @@ export interface UploadFileRequest {
   fileType?: "srt" | "vtt" | "ass" | "lrc";
 }
 
+export type UploadTranslateOutputFormat = "ass" | "json";
+
+export interface UploadTranslateRequest extends UploadFileRequest {
+  targetLanguage: string;
+  sourceLanguage?: string;
+  translationMethod: string;
+  apiKey?: string;
+  bilingualPosition?: "above" | "below";
+  outputFormat?: UploadTranslateOutputFormat;
+}
+
+export interface JsonSubtitleItem {
+  start: string;
+  end: string;
+  [languageCode: string]: string;
+}
+
 export interface UploadFileResponse {
   success: boolean;
   fileType?: string;

@@ -101,10 +101,10 @@ export const fetchJSON = async (url: string, init?: RequestInit): Promise<unknow
   try {
     let response: Response;
 
-    if (shouldUseProxy) {
+    if (shouldUseProxy && proxyUrl) {
       const { ProxyAgent } = await import("undici");
       const agent = new ProxyAgent(proxyUrl);
-      response = await fetch(url, { ...fetchInit, dispatcher: agent as any });
+      response = await fetch(url, { ...fetchInit, dispatcher: agent } as any);
     } else {
       response = await fetch(url, fetchInit);
     }

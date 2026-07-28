@@ -264,6 +264,48 @@ fileType: "srt" (可选，自动检测)
 }
 ```
 
+##### 上传并翻译字幕
+
+```text
+POST /api/upload/translate
+Content-Type: multipart/form-data
+```
+
+默认输出双语 ASS（SRT/VTT 输入会转换为 ASS）：
+
+```bash
+curl -X POST http://localhost:3001/api/upload/translate \
+  -F "file=@subtitle.srt" \
+  -F "sourceLanguage=en" \
+  -F "targetLanguage=zh" \
+  -F "translationMethod=gtxFreeAPI" \
+  -o subtitle_bilingual.ass
+```
+
+设置 `outputFormat=json` 可返回 JSON 字幕数组。JSON 输出仅支持 SRT，且必须显式提供非 `auto` 的 `sourceLanguage`：
+
+```bash
+curl -X POST http://localhost:3001/api/upload/translate \
+  -F "file=@subtitle.srt" \
+  -F "sourceLanguage=en" \
+  -F "targetLanguage=zh" \
+  -F "translationMethod=gtxFreeAPI" \
+  -F "outputFormat=json"
+```
+
+响应中的语言字段由 `sourceLanguage` 和 `targetLanguage` 动态生成，时间戳直接取自 SRT 并保留三位毫秒：
+
+```json
+[
+  {
+    "start": "00:00:00,000",
+    "end": "00:00:02,360",
+    "en": "Steve Bannon, welcome to the insider.",
+    "zh": "史蒂夫·班农，欢迎来到内部人士。"
+  }
+]
+```
+
 ##### 生成双语字幕
 
 ```

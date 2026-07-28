@@ -1,0 +1,11 @@
+1
+00:00:00,000 --> 00:00:02,360
+Steve Bannon, welcome to the insider.
+
+2
+00:00:03,500 --> 00:00:05,080
+2026
+
+3
+00:00:06,100 --> 00:00:08,200
+This is a test subtitle file for JSON output validation.

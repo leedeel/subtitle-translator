@@ -144,6 +144,68 @@ export const filterSubLines = (lines: string[], fileType: string) => {
 };
 
 const TIME_REGEX = /^(?:(\d+):)?(\d{2}):(\d{2})[,.](\d{1,3})$/;
+const SRT_TIME_LINE_REGEX = /^((?:\d+:)?\d{2}:\d{2},\d{1,3})\s*-->\s*((?:\d+:)?\d{2}:\d{2},\d{1,3})(?:\s+.*)?$/;
+
+export interface SrtCue {
+  timeLineIndex: number;
+  start: string;
+  end: string;
+  textLines: string[];
+}
+
+export const normalizeSrtTimestamp = (time: string): string => {
+  const match = time.match(TIME_REGEX);
+  if (!match) return time;
+
+  const [, hours, minutes, seconds, ms] = match;
+  const normalizedHours = Number.parseInt(hours || "0", 10).toString().padStart(2, "0");
+  const normalizedMilliseconds = ms.padEnd(3, "0");
+  return `${normalizedHours}:${minutes}:${seconds},${normalizedMilliseconds}`;
+};
+
+export const parseSrtCues = (lines: string[]): SrtCue[] => {
+  const cues: SrtCue[] = [];
+  let lineIndex = 0;
+
+  while (lineIndex < lines.length) {
+    const timeLineMatch = lines[lineIndex].trim().match(SRT_TIME_LINE_REGEX);
+    if (!timeLineMatch) {
+      lineIndex++;
+      continue;
+    }
+
+    const textLines: string[] = [];
+    let nextLineIndex = lineIndex + 1;
+
+    while (nextLineIndex < lines.length) {
+      const line = lines[nextLineIndex];
+      const trimmedLine = line.trim();
+
+      if (trimmedLine === "" || SRT_TIME_LINE_REGEX.test(trimmedLine)) {
+        break;
+      }
+
+      const followingLine = lines[nextLineIndex + 1]?.trim();
+      if (INTEGER_REGEX.test(trimmedLine) && followingLine && SRT_TIME_LINE_REGEX.test(followingLine)) {
+        break;
+      }
+
+      textLines.push(line);
+      nextLineIndex++;
+    }
+
+    cues.push({
+      timeLineIndex: lineIndex,
+      start: timeLineMatch[1],
+      end: timeLineMatch[2],
+      textLines,
+    });
+    lineIndex = nextLineIndex;
+  }
+
+  return cues;
+};
+
 export const convertTimeToAss = (time: string): string => {
   const match = time.match(TIME_REGEX);
   if (!match) return time;

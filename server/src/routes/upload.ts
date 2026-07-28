@@ -2,9 +2,19 @@
 
 import { Router, Request, Response } from "express";
 import multer from "multer";
-import { detectSubtitleFormat, filterSubLines, assHeader, prepareAssForTranslation, restoreAssAfterTranslation, convertTimeToAss, VTT_SRT_TIME } from "../lib/subtitle";
-import { generateCacheSuffix, getDefaultConfig } from "../lib/translation";
-import type { UploadFileResponse, UploadFileRequest } from "../types";
+import {
+  assHeader,
+  convertTimeToAss,
+  detectSubtitleFormat,
+  filterSubLines,
+  normalizeSrtTimestamp,
+  parseSrtCues,
+  prepareAssForTranslation,
+  restoreAssAfterTranslation,
+  VTT_SRT_TIME,
+} from "../lib/subtitle";
+import { generateCacheSuffix, getDefaultConfig, useTranslation } from "../lib/translation";
+import type { JsonSubtitleItem, UploadFileResponse, UploadFileRequest, UploadTranslateRequest } from "../types";
 import { asyncHandler } from "../middleware";
 import { readEncoding } from "../lib/utils/encoding";
 
@@ -73,7 +83,6 @@ router.post(
     }
 
     const buffer = req.file.buffer;
-    const originalname = req.file.originalname || "";
     const body = req.body as Partial<UploadFileRequest>;
 
     try {
@@ -203,15 +212,15 @@ router.post(
       });
     } else if (fileType === "vtt") {
       output = "WEBVTT\n\n";
-      originalLines.forEach((line, i) => {
+      originalLines.forEach((line: string, i: number) => {
         output += `${i + 1}\n00:00:00.000 --> 00:00:05.000\n${line}\n${translatedLines[i]}\n\n`;
       });
     } else if (fileType === "lrc") {
-      originalLines.forEach((line, i) => {
+      originalLines.forEach((line: string, i: number) => {
         output += `[${formatTime(i)}]${line} / ${translatedLines[i]}\n`;
       });
     } else {
-      originalLines.forEach((line, i) => {
+      originalLines.forEach((line: string, i: number) => {
         output += `${i + 1}\n00:00:00,000 --> 00:00:05,000\n${line}\n${translatedLines[i]}\n\n`;
       });
     }
@@ -249,7 +258,7 @@ router.post(
  *                 description: 目标语言代码（如 'en', 'zh', 'ja'）
  *               sourceLanguage:
  *                 type: string
- *                 description: 源语言代码（默认 auto）
+ *                 description: 源语言代码（默认 auto；JSON 输出时必须显式指定且不能为 auto）
  *               translationMethod:
  *                 type: string
  *                 description: 翻译服务/方法
@@ -264,15 +273,40 @@ router.post(
  *                 type: string
  *                 enum: [above, below]
  *                 description: 双语字幕位置（默认 below）
+ *               outputFormat:
+ *                 type: string
+ *                 enum: [ass, json]
+ *                 default: ass
+ *                 description: 输出格式。json 仅支持 SRT 输入，并返回字幕对象数组
  *     responses:
  *       200:
- *         description: 翻译成功，返回双语字幕文件
+ *         description: 翻译成功，默认返回双语字幕文件；outputFormat=json 时返回字幕对象数组
  *         content:
  *           text/plain:
  *             schema:
  *               type: string
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 required: [start, end]
+ *                 properties:
+ *                   start:
+ *                     type: string
+ *                     example: "00:00:00,000"
+ *                   end:
+ *                     type: string
+ *                     example: "00:00:02,360"
+ *                 additionalProperties:
+ *                   type: string
+ *             example:
+ *               - start: "00:00:00,000"
+ *                 end: "00:00:02,360"
+ *                 en: "Steve Bannon, welcome to the insider."
+ *                 zh: "史蒂夫·班农，欢迎来到内部人士。"
  *       400:
- *         description: 请求错误
+ *         description: 请求错误、JSON 输出参数无效或输入不是 SRT
  *         content:
  *           application/json:
  *             schema:
@@ -296,7 +330,19 @@ router.post(
       return;
     }
 
-    const { targetLanguage, sourceLanguage = "auto", translationMethod, apiKey, fileType: fileTypeOption, bilingualPosition = "below" } = req.body;
+    const body = req.body as Partial<UploadTranslateRequest>;
+    const {
+      targetLanguage: targetLanguageOption,
+      sourceLanguage: sourceLanguageOption,
+      translationMethod: translationMethodOption,
+      apiKey,
+      fileType: fileTypeOption,
+      bilingualPosition = "below",
+      outputFormat: outputFormatOption = "ass",
+    } = body;
+    const targetLanguage = typeof targetLanguageOption === "string" ? targetLanguageOption.trim() : "";
+    const sourceLanguage = typeof sourceLanguageOption === "string" && sourceLanguageOption.trim() !== "" ? sourceLanguageOption.trim() : "auto";
+    const translationMethod = typeof translationMethodOption === "string" ? translationMethodOption.trim() : "";
 
     if (!targetLanguage || !translationMethod) {
       res.status(400).json({
@@ -305,6 +351,16 @@ router.post(
       });
       return;
     }
+
+    const normalizedOutputFormat = typeof outputFormatOption === "string" ? outputFormatOption.trim().toLowerCase() : "";
+    if (normalizedOutputFormat !== "ass" && normalizedOutputFormat !== "json") {
+      res.status(400).json({
+        success: false,
+        error: "outputFormat 仅支持 ass 或 json",
+      });
+      return;
+    }
+    const outputFormat = normalizedOutputFormat as "ass" | "json";
 
     try {
       const buffer = req.file.buffer;
@@ -322,7 +378,57 @@ router.post(
         return;
       }
 
-      const { contentLines, contentIndices, assContentStartIndex, styleBlockLines } = filterSubLines(lines, detectedFileType);
+      let sourceLanguageField = "";
+      let targetLanguageField = "";
+      let srtCues: ReturnType<typeof parseSrtCues> = [];
+      let contentLines: string[] = [];
+      let contentIndices: number[] = [];
+      let assContentStartIndex = 9;
+      let styleBlockLines: string[] = [];
+
+      if (outputFormat === "json") {
+        if (detectedFileType !== "srt") {
+          res.status(400).json({
+            success: false,
+            error: "JSON 输出仅支持 SRT 输入格式",
+          });
+          return;
+        }
+
+        if (sourceLanguage.toLowerCase() === "auto") {
+          res.status(400).json({
+            success: false,
+            error: "JSON 输出要求显式提供 sourceLanguage，且不能为 auto",
+          });
+          return;
+        }
+
+        sourceLanguageField = normalizeLanguageField(sourceLanguage);
+        targetLanguageField = normalizeLanguageField(targetLanguage);
+        if (!isValidLanguageField(sourceLanguageField) || !isValidLanguageField(targetLanguageField)) {
+          res.status(400).json({
+            success: false,
+            error: "sourceLanguage 或 targetLanguage 不是有效的语言代码",
+          });
+          return;
+        }
+        if (sourceLanguageField === targetLanguageField) {
+          res.status(400).json({
+            success: false,
+            error: "sourceLanguage 和 targetLanguage 必须映射为不同的 JSON 字段",
+          });
+          return;
+        }
+
+        srtCues = parseSrtCues(lines);
+        contentLines = srtCues.flatMap((cue) => cue.textLines);
+      } else {
+        const parsedSubtitle = filterSubLines(lines, detectedFileType);
+        contentLines = parsedSubtitle.contentLines;
+        contentIndices = parsedSubtitle.contentIndices;
+        assContentStartIndex = parsedSubtitle.assContentStartIndex;
+        styleBlockLines = parsedSubtitle.styleBlockLines;
+      }
 
       if (contentLines.length === 0) {
         res.status(400).json({
@@ -337,8 +443,16 @@ router.post(
       const { cleanLines, tagMaps } = isAss ? prepareAssForTranslation(contentLines) : { cleanLines: contentLines, tagMaps: [] };
 
       // 翻译所有内容行
-      const { translate } = require("../lib/translation").useTranslation();
+      const { translate } = useTranslation();
       const defaultConfig = getDefaultConfig(translationMethod);
+
+      if (!defaultConfig) {
+        res.status(400).json({
+          success: false,
+          error: `Unsupported translation method: ${translationMethod}`,
+        });
+        return;
+      }
 
       const cacheSuffix = generateCacheSuffix(
         sourceLanguage,
@@ -377,6 +491,25 @@ router.post(
 
       // ASS：还原标签与换行符（\N），与 prepareAssForTranslation 对称
       const finalTranslatedLines = isAss ? restoreAssAfterTranslation(translatedLines, tagMaps) : translatedLines;
+
+      if (outputFormat === "json") {
+        let translatedLineIndex = 0;
+        const jsonResult: JsonSubtitleItem[] = srtCues.map((cue) => {
+          const lineCount = cue.textLines.length;
+          const translatedCueLines = finalTranslatedLines.slice(translatedLineIndex, translatedLineIndex + lineCount);
+          translatedLineIndex += lineCount;
+
+          return {
+            start: normalizeSrtTimestamp(cue.start),
+            end: normalizeSrtTimestamp(cue.end),
+            [sourceLanguageField]: cue.textLines.join("\n"),
+            [targetLanguageField]: translatedCueLines.join("\n"),
+          };
+        });
+
+        res.json(jsonResult);
+        return;
+      }
 
       // 生成双语字幕
       const translatedTextArray = [...lines];
@@ -483,6 +616,14 @@ router.post(
     }
   })
 );
+
+function normalizeLanguageField(language: string): string {
+  return language.trim().toLowerCase().split(/[-_]/)[0];
+}
+
+function isValidLanguageField(language: string): boolean {
+  return /^[a-z]{2,8}$/.test(language) && language !== "start" && language !== "end";
+}
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
